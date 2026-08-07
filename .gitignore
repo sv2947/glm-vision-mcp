@@ -1,0 +1,25 @@
+# 开发过程文件（本机工作日志，不上传）
+HANDOFF.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 环境与密钥
+.env
+*.key
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 测试临时文件
+_selftest.py
+/tmp/
