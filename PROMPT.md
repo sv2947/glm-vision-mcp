@@ -19,13 +19,14 @@
 
 1. 把仓库克隆到本地，例如：git clone https://github.com/sv2947/glm-vision-mcp.git
 2. 阅读仓库根目录的 AGENTS.md 文件，里面有完整的自动安装指引
-3. 严格按 AGENTS.md 里的 Step 1 ~ Step 4 执行：
-   - Step 1：安装 Python 依赖
-   - Step 2：在我的 AI 客户端里注册 glm-vision MCP server
+3. 严格按 AGENTS.md 里的步骤执行：
+   - 先安装依赖（AGENTS.md Step 1）
+   - 优先运行一键脚本 `python install.py`（AGENTS.md Step 2 推荐方式），
+     它会自动完成配置注册、skill 安装、server 验证；先跑 `--dry-run` 预览再正式跑
+   - 如果脚本不可用或失败，再按 AGENTS.md 里的手动方式配置
      （注意：如果我是 ZCode，用嵌套 mcp.servers 格式；
       如果是 Claude Desktop / Cursor / VS Code 等其他客户端，用标准 mcpServers 格式）
-   - Step 3：（仅 ZCode）把 skill 目录装到 ~/.zcode/skills/vision
-   - Step 4：让我重启客户端
+   - 最后让我重启客户端（AGENTS.md Step 4）
 4. 每完成一步，告诉我这一步的结果；全部完成后，对照 AGENTS.md 末尾的完成清单逐项汇报
 5. 需要我提供智谱 API Key 时，提醒我去 https://open.bigmodel.cn/usercenter/apikeys 申请
    （用我自己的 Key，不要用仓库里的示例值）
