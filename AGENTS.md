@@ -18,7 +18,7 @@
 
 ## 环境要求
 
-- **Python 3.10+**。用 `python --version` 确认，没有则先让用户安装。
+- **Python 3.10+**。用 `python --version` 确认；Windows 下 `python` 不存在就试 `py -3`。
 - **智谱 API Key**：用户需要先在 https://open.bigmodel.cn/usercenter/apikeys 注册并创建 Key。**用用户的 Key，绝不要用仓库里任何占位符或示例 Key。**
 
 ---
@@ -28,22 +28,35 @@
 在仓库根目录执行：
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
-验证：`python -c "import mcp, httpx; print('ok')"` 无报错。
+> 用 `python -m pip` 而不是裸 `pip`，确保装进同一个解释器。Windows 下若 `python` 不行，用 `py -3 -m pip install -r requirements.txt`。
 
-> Windows 下若 `python` 命令不存在，试 `py -3` 或 `python3`，并把后续所有 `python` 换成实际可用的命令。记下这个命令，Step 2 要用。
+验证：`python -c "import mcp, httpx; print('ok')"` 无报错。记下可用的 python 命令，后续步骤要用。
 
-## Step 2：注册 MCP Server
+## Step 2：注册 MCP Server（推荐用一键脚本）
 
-MCP server 的定义如下（不同客户端格式略有差异，见下）：
+### 推荐方式：运行 install.py（跨平台，自动完成配置 + skill + 验证）
 
-- **command**：本机可用的 python 命令或绝对路径（如 Windows 的 `C:\Program Files\Python312\python.exe`）
-- **args**：`["<仓库绝对路径>/server.py"]`
-- **env**：`{"ZHIPUAI_API_KEY": "<用户自己的 Key>"}`
+```bash
+python install.py
+```
 
-### 情况 A：客户端用标准 `mcpServers` 顶层键（Claude Desktop、Cursor、VS Code 等大部分 IDE）
+脚本会自动：
+- 检测/安装依赖
+- 收集 API Key（环境变量没有就交互提示用户输入——此时让用户去申请，**不要替用户编造 Key**）
+- 合并配置到 ZCode 的 `~/.zcode/cli/config.json`（写前备份、写前打印）
+- 拷贝 skill 到 `~/.zcode/skills/vision`
+- 实测 server 返回工具列表
+
+脚本会打印一份**标准 `mcpServers` 配置**，如果用户不是 ZCode（是 Claude Desktop / Cursor / VS Code 等），把这份配置按该客户端的方式填入即可。
+
+先跑 `python install.py --dry-run` 预览动作（不写文件），确认无误再正式跑。
+
+### 手动方式（脚本失败或需要手工干预时）
+
+**情况 A：标准 `mcpServers` 顶层键**（Claude Desktop、Cursor、VS Code 等）
 
 在这些客户端的 MCP 配置中添加：
 
@@ -56,17 +69,15 @@ MCP server 的定义如下（不同客户端格式略有差异，见下）：
       "args": ["<仓库绝对路径>/server.py"],
       "env": {
         "ZHIPUAI_API_KEY": "<用户自己的 Key>"
-      },
-      "enabled": true,
-      "timeoutMs": 120000
+      }
     }
   }
 }
 ```
 
-### 情况 B：客户端是 ZCode
+**情况 B：ZCode（嵌套 `mcp.servers`）**
 
-ZCode 用嵌套 `mcp.servers`，配置在 `~/.zcode/cli/config.json`。读取现有文件，在 `mcp.servers` 下合并（保留原有内容，不要覆盖）：
+配置文件在 `~/.zcode/cli/config.json`。**如果文件不存在，创建它**并写 `{"mcp": {"servers": {}}}` 骨架；如果存在，读取并合并（保留原有内容，只加 `glm-vision`）。ZCode 专用字段：
 
 ```json
 {
@@ -76,9 +87,7 @@ ZCode 用嵌套 `mcp.servers`，配置在 `~/.zcode/cli/config.json`。读取现
         "type": "stdio",
         "command": "<python 绝对路径>",
         "args": ["<仓库绝对路径>/server.py"],
-        "env": {
-          "ZHIPUAI_API_KEY": "<用户自己的 Key>"
-        },
+        "env": { "ZHIPUAI_API_KEY": "<用户自己的 Key>" },
         "enabled": true,
         "timeoutMs": 120000
       }
@@ -87,28 +96,34 @@ ZCode 用嵌套 `mcp.servers`，配置在 `~/.zcode/cli/config.json`。读取现
 }
 ```
 
-> ZCode 注意：配置文件不展开 `${...}` 模板，必须用绝对路径；Windows 下 `command` 指向 `.exe` 路径。
+> **Windows JSON 路径注意**：JSON 里反斜杠必须转义。`C:\Program Files\...` 要写成 `C:\\Program Files\\...`，否则 JSON 非法、配置加载失败。
+
+### Key 流程（重要）
+
+- **用户还没给 Key**：先让用户去 https://open.bigmodel.cn/usercenter/apikeys 申请并给你，拿到后再写配置。**不要用占位符写进配置**——server 无 Key 会直接退出，客户端 MCP 面板会显示 failed，用户会误以为装坏了。
+- **Key 只走 MCP 配置的 env 字段**。不要创建 `.env` 文件——server.py 不读 `.env`（源码只读环境变量），填了也没用。
 
 ### 验证（两种情况通用）
 
-用这个命令直接测试 server 能启动并返回工具列表：
+用这个命令直接测试 server 能启动并返回工具列表（注意：这是 bash 语法；Windows CMD/PowerShell 用户请改用 `python install.py` 里的自动验证，或让 Agent 直接用 install.py）：
 
 ```bash
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}
 {"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | ZHIPUAI_API_KEY=<用户的Key> <python> <仓库绝对路径>/server.py
 ```
 
-期望输出里能看到 `analyze_image` 和 `batch_analyze_images`。如果报错，按文末"常见问题"排查。
+期望输出里能看到 `analyze_image` 和 `batch_analyze_images`（输出中混有 INFO 日志是正常的，用文本搜索而不是整体 JSON 解析）。
 
 ## Step 3：（仅 ZCode）安装 Vision Skill
 
-把仓库的 `skill/` 目录复制到用户级 skills 目录：
+如果用了 install.py，这一步已自动完成。手动安装：
 
 ```bash
+mkdir -p ~/.zcode/skills
 cp -r skill ~/.zcode/skills/vision
 ```
 
-> 若 `~/.zcode/skills/vision` 已存在，先备份或确认覆盖。此步对非 ZCode 客户端可跳过。
+> Windows CMD/PowerShell 下 `cp` 不可用，用 `Copy-Item -Recurse skill ~\.zcode\skills\vision`（PowerShell）或让 Agent 用 Python 的 shutil。若 `~/.zcode/skills/vision` 已存在，先备份或确认覆盖。非 ZCode 客户端跳过此步。
 
 ## Step 4：让用户重启客户端
 
@@ -125,16 +140,21 @@ MCP 配置改动需要重启客户端才生效。告诉用户：
 | 症状 | 原因 | 解决 |
 |---|---|---|
 | `python: command not found` / `py` 报错 | python 命令名不对 | 用 `where python` / `py -3 --version` 找可用命令 |
-| server 启动报 `ZHIPUAI_API_KEY 未设置` | env 没配或 Key 为空 | 确认配置里 `env.ZHIPUAI_API_KEY` 填了用户 Key |
-| MCP 工具不出现 | 配置没加载或格式错 | 检查 JSON 语法；ZCode 检查是否用了 `mcp.servers` 嵌套 |
+| server 启动报 `ZHIPUAI_API_KEY 未设置` | env 没配或 Key 为空 | 确认配置里 `env.ZHIPUAI_API_KEY` 填了用户 Key（不用 .env） |
+| 配置加载失败 / JSON 报错 | Windows 路径反斜杠没转义 | `C:\` 写成 `C:\\`；校验 JSON 语法 |
+| MCP 工具不出现 | 配置没加载或格式错 | 检查 JSON；ZCode 用嵌套 `mcp.servers`；配置文件不存在时先创建骨架 |
 | 调用报 `429 该模型当前访问量过大` | 免费模型限流 | 稍后重试，不是配置问题 |
 | 调用报 `1210 图片输入格式/解析错误` | 图片 URL 跨区/防盗链 | 换图片源或改用本地文件路径 |
 | `failed: ENOENT`（Windows） | command 路径不对 | 用 python 的绝对 `.exe` 路径 |
 
 ## 完成清单（向用户汇报时对照）
 
+**Agent 可自验项：**
 - [ ] 依赖装好，`import mcp, httpx` 通过
-- [ ] MCP 配置已写入正确位置，server 实测返回两个工具
-- [ ] （ZCode）skill 已复制到 `~/.zcode/skills/vision`
+- [ ] 配置已写入正确位置，server 实测返回两个工具（或 install.py 验证通过）
+- [ ] （ZCode）skill 已安装到 `~/.zcode/skills/vision`
+
+**需用户操作项（Agent 负责提醒，不能替用户完成）：**
+- [ ] 用户已提供自己的 API Key，已填入配置 env 字段
 - [ ] 用户已重启客户端，`glm-vision` connected
-- [ ] 用户自己的 API Key 已填入，仓库源码未改动
+- [ ] 用户已测试识别一张图成功
