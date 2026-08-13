@@ -12,6 +12,7 @@ glm-vision-mcp/
 ├── .env.example        # API Key 占位模板
 ├── skill/
 │   └── SKILL.md        # ZCode Vision Skill（/vision 触发）
+├── AGENTS.md           # 给 AI Agent 看的自动安装指引
 ├── MIGRATE.md          # 换机迁移指南
 └── README.md
 ```
