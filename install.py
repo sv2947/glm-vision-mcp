@@ -12,6 +12,11 @@
   python install.py            # 正常安装
   python install.py --dry-run  # 只打印将执行的动作，不写任何文件
 
+传 API Key 的跨平台方式（也可以不传，脚本会交互询问）：
+  Git Bash / Unix：  ZHIPUAI_API_KEY=xxx python install.py
+  Windows CMD：      set ZHIPUAI_API_KEY=xxx && python install.py
+  PowerShell：       $env:ZHIPUAI_API_KEY="xxx"; python install.py
+
 注意：
   - 本脚本只配置 ZCode 客户端（~/.zcode/cli/config.json）。
   - 非 ZCode 客户端（Claude Desktop / Cursor / VS Code 等）：脚本会打印
@@ -62,6 +67,21 @@ def check_deps() -> None:
 
 
 # ---------- 2. API Key ----------
+
+def check_existing() -> None:
+    """提示是否已装过（防止重复安装困惑）。"""
+    cfg = config_path()
+    if not cfg.exists():
+        return
+    try:
+        data = json.loads(cfg.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return
+    existing = data.get("mcp", {}).get("servers", {}).get(SERVER_NAME)
+    if existing:
+        log(f"检测到 {SERVER_NAME} 已配置过（command={existing.get('command')}）。")
+        log("本次运行将覆盖该配置（原配置会自动备份）。")
+
 
 def get_api_key() -> str:
     key = os.environ.get("ZHIPUAI_API_KEY", "").strip()
@@ -207,12 +227,13 @@ def main() -> None:
         log("dry-run 模式：只打印，不写入")
 
     check_deps()
+    check_existing()
     api_key = get_api_key()
 
     cfg = merge_zcode_config(api_key)
     print_generic_config(api_key)
+    install_skill()  # dry-run 时内部只打印不拷贝
     if not DRY_RUN:
-        install_skill()
         ok = verify_server(api_key)
         if not ok:
             fail("验证未通过，见上方 server 输出。常见原因：API Key 无效或网络问题。")
