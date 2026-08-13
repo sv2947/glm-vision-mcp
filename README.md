@@ -2,6 +2,8 @@
 
 封装智谱 **GLM-4.6V-Flash** 视觉模型的 MCP Server，配套一个 ZCode Vision Skill。stdio 传输，对外暴露图片/视频/文件理解工具，底层用 httpx 调智谱 REST API。
 
+> 📌 **想快速用起来 / 分享给朋友**：让 Agent 读 [PROMPT.md](./PROMPT.md)，把里面的提示词发给你的 AI Agent 即可自动完成安装。
+
 ## 仓库结构
 
 ```
@@ -13,6 +15,7 @@ glm-vision-mcp/
 ├── skill/
 │   └── SKILL.md        # ZCode Vision Skill（/vision 触发）
 ├── AGENTS.md           # 给 AI Agent 看的自动安装指引
+├── PROMPT.md           # 给朋友的提示词（复制发给 Agent 即可自动安装）
 ├── MIGRATE.md          # 换机迁移指南
 └── README.md
 ```
