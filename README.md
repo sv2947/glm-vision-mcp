@@ -9,6 +9,7 @@
 ```
 glm-vision-mcp/
 ├── server.py           # MCP Server 主程序（FastMCP + httpx）
+├── install.py          # ★ 一键安装脚本（跨平台，Agent 用）
 ├── pyproject.toml      # 项目元数据 + hatchling 构建
 ├── requirements.txt    # 依赖：mcp, httpx
 ├── .env.example        # API Key 占位模板
