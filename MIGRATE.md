@@ -50,7 +50,7 @@ pip install -r requirements.txt
 
 **② MCP 配置里的 server.py 路径**（`~/.zcode/cli/config.json` 的 `args`）
 ```json
-"args": ["C:\\Users\\Administrator\\ZCodeProject\\glm-vision-mcp\\server.py"]
+"args": ["C:\\Users\\<用户>\\path\\to\\glm-vision-mcp\\server.py"]
 ```
 → 改成新机器实际克隆位置。
 
